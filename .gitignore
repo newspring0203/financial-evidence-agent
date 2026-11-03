@@ -31,5 +31,3 @@ data/*.tmp
 /start.command
 /.env.example
 
-# Keep the initial repository without a README
-/README.md
