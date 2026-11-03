@@ -102,6 +102,10 @@ def retrieve(documents, query, basis='CFS', k=3, *, structure=True, expansion=Tr
             if '순실현가능가치' in text and ('낮은 금액' in text or '저가법' in text):score*=1.8
             if chunk.get('_numeric_share',0)>.35:score*=.4
         if rerank and ('수익인식' in query or '수익 인식' in query) and any(w in text for w in ('반품','수행의무','통제가 이전')):score*=1.25
+        if rerank and any(w in query for w in ('정책','설명','관리')) and chunk.get('_numeric_share',0)>.35:
+            score*=.45
+        if rerank and '반품' in query and '반품' in text:
+            score*=2.5
         if rerank and ('특수관계' in query or '계열사' in query):
             if re.search(r'특수관계자.{0,45}(거래|내역)',text):score*=1.25
         # This is a weak context hint, never proof of statement scope.
