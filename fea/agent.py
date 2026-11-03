@@ -80,12 +80,12 @@ class Run:
                 'basis': self.basis, 'strategy': self.tools.strategy,
                 'claims': accepted, 'follow_up': final.get('follow_up', []),
                 'limitations': final.get('limitations', []) + rejected + [
-                    '자동 검증은 출처·원문 위치·계산의 무결성을 확인합니다. 주장이 근거로 지지되는지는 검토가 필요합니다.',
-                    '공시 본문 검색은 전체 보고서 대상입니다. 연결·별도 주석의 문맥을 원문에서 확인하세요.'],
+                    '연결된 원문을 함께 읽고, 질문에 맞는 근거인지 확인해 주세요.',
+                    '검색에는 연결·별도 재무제표 주석이 함께 포함될 수 있습니다. 선택한 재무제표에 맞는 설명인지 확인해 주세요.'],
                 'evidence': list(selected.values()),
                 'checks': self.tools.verify(list(selected.values()), self.retrieved),
                 'trace': self.trace, 'usage': usage,
-                'duration_ms': round((time.perf_counter() - started) * 1000),
+                'duration_ms': round((time.perf_counter() - started) * 1000, 2),
                 'status': 'answered' if accepted else 'insufficient_evidence'}
 
 
@@ -150,7 +150,39 @@ def rule_run(run, question):
     return {'claims': claims, 'follow_up': [
         '매출·재고 변동의 원인을 제품별·사업부별 구성과 함께 확인했나요?',
         '평가손실·회수가능성 판단에 필요한 추가 증빙을 확보했나요?'],
-        'limitations': limitations + ['규칙 기반 실행입니다. 자연어 의도 이해 범위가 제한되며 LLM 평가 결과가 아닙니다.']}
+        'limitations': limitations + ['기본 분석으로 조회·계산한 결과입니다. 복잡한 질문은 LLM 도구 호출에서 확인해 주세요.']}
+
+
+def llm_error_message(response):
+    try:
+        payload = response.json()
+        error = payload.get('error', {}) if isinstance(payload, dict) else {}
+        if not isinstance(error, dict):
+            error = {}
+    except ValueError:
+        error = {}
+    code = error.get('code')
+    messages = {
+        'credit_balance_exhausted': 'API 크레딧 잔액이 없습니다. OpenAI Platform의 Billing에서 크레딧을 확인하세요.',
+        'organization_spend_limit_exceeded': '조직의 API 지출 한도에 도달했습니다. Billing과 조직 한도를 확인하세요.',
+        'project_spend_limit_exceeded': '프로젝트의 API 지출 한도에 도달했습니다. 해당 프로젝트 한도를 확인하세요.',
+        'organization_usage_limit_exceeded': '조직에 적용된 API 사용 한도에 도달했습니다. 조직 Limits를 확인하세요.',
+        'billing_hard_limit_reached': 'API 결제 한도에 도달했습니다. Billing의 결제·사용 한도를 확인하세요.',
+        'insufficient_quota': 'API 크레딧 또는 사용 한도가 부족합니다. 키가 속한 조직의 Billing과 Limits를 확인하세요.',
+        'rate_limit_exceeded': '분당 요청·토큰 한도를 초과했습니다. 잠시 후 질문 범위를 줄여 다시 실행하세요.',
+        'slow_down': 'API 요청이 짧은 시간에 증가했습니다. 잠시 후 한 번만 다시 실행하세요.',
+    }
+    if not isinstance(code, str) or code not in messages:
+        code = 'insufficient_quota' if error.get('type') == 'insufficient_quota' else None
+    if code:
+        return f'LLM API 오류 (HTTP {response.status_code}, {code}). ' + messages[code]
+    fallback = {
+        401: 'API 키가 유효한지, 만료되거나 삭제되지 않았는지 확인하세요.',
+        403: 'API 키의 Responses 쓰기 권한과 프로젝트의 모델 접근 권한을 확인하세요.',
+        404: '모델 ID와 해당 프로젝트의 모델 접근 권한을 확인하세요.',
+        429: '요청 한도 또는 API 크레딧·사용 한도 문제입니다. Billing과 Limits를 확인하세요. 세부 원인을 확인할 오류 코드가 없습니다.',
+    }
+    return f'LLM API 요청 실패 (HTTP {response.status_code}). ' + fallback.get(response.status_code, '요청 설정 또는 외부 API 상태를 확인하세요.')
 
 
 def llm_run(run, question, client=None, credentials=None):
@@ -171,7 +203,7 @@ def llm_run(run, question, client=None, credentials=None):
                     'text': {'format': {'type': 'json_schema', 'name': 'financial_review',
                                         'strict': True, 'schema': FINAL_SCHEMA}}})
             if response.status_code != 200:
-                raise DomainError(f'LLM API 요청 실패 (HTTP {response.status_code}). 서버 설정·잔액·모델 접근 권한을 확인하세요.')
+                raise DomainError(llm_error_message(response))
             payload = response.json()
             usage['requests'] += 1
             for key_ in ('input_tokens', 'output_tokens'):
