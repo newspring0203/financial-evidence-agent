@@ -48,7 +48,7 @@ def retrieve(documents, query):
                                'title':doc['title'],'filename':doc['filename'],'version':doc['version'],
                                'effective_date':doc['effective_date'], 'start':start,'end':end,
                                'start_line':line,'end_line':end_line,'quote':quote,'sha256':doc['sha256'],
-                               'score':round(score,3),'source_type':'user_document',
+                               'score':round(score,3),'source_type':'user_document','account_code':doc.get('account_code','COMMON'),
                                'verified':text[start:end]==quote and hashlib.sha256(text.encode()).hexdigest()==doc['sha256']})
             if end==len(text):break
     return sorted(ranked,key=lambda r:(-r['score'],r['id']))[:5]
