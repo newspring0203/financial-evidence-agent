@@ -77,12 +77,14 @@ def prune():
             del SESSIONS[token]
 
 
-def session(request):
+def session(request, public=True):
     with LOCK:
         prune()
         value = SESSIONS.get(request.cookies.get('fea_session', ''))
         if not value:
             raise HTTPException(401, 'OpenDART 키를 입력해 공시를 먼저 조회하세요. 세션은 1시간 후 만료됩니다.')
+        if public and not value.get('data'):
+            raise HTTPException(401, '공시 분석을 사용하려면 OpenDART 키로 기업 공시를 먼저 조회하세요.')
         return value
 
 
@@ -107,6 +109,8 @@ class Scenario(BaseModel):
 
 def metadata(value):
     data = value['data']
+    if not data:
+        return {'connected':False, 'knowledge_ready':True}
     tool = Tools('dart', data=data)
     cards = []
     for metric, label in [('revenue', '매출'), ('operating_profit', '영업이익'), ('inventory', '재고자산')]:
@@ -117,7 +121,7 @@ def metadata(value):
             cards.append({'label': label, 'fact': fact, 'prior': prior, 'change': change})
         except DomainError:
             cards.append({'label': label, 'unavailable': True})
-    return {'connected': True, 'company': data['companies'][0], 'year': value['year'], 'basis': value['basis'],
+    return {'connected': True, 'knowledge_ready':True, 'company': data['companies'][0], 'year': value['year'], 'basis': value['basis'],
             'collected_at': data['collected_at'], 'warnings': data.get('warnings', []), 'cards': cards,
             'documents': [{k: v for k, v in d.items() if k != 'text'} for d in data['documents']],
             'llm_ready': bool(value['credentials'][0] and value['credentials'][1]),
@@ -127,7 +131,7 @@ def metadata(value):
 @app.get('/api/status')
 def status(request: Request):
     try:
-        return metadata(session(request))
+        return metadata(session(request, public=False))
     except HTTPException:
         return {'connected': False}
 
@@ -145,7 +149,13 @@ def connect(body: Connect, request: Request, response: Response):
         token = secrets.token_urlsafe(32)
         value = {'data': data, 'company': data['companies'][0]['corp_code'], 'year': body.year,
                  'basis': body.basis, 'expires': time.monotonic() + TTL,
-                 'credentials': (body.openai_key.get_secret_value(), body.model.strip()), 'knowledge': []}
+                 'credentials': (body.openai_key.get_secret_value(), body.model.strip()),
+                 'knowledge': [], 'folders': default_folders()}
+        with LOCK:
+            previous = SESSIONS.get(request.cookies.get('fea_session',''))
+            if previous:
+                value['knowledge'] = previous.get('knowledge', [])
+                value['folders'] = previous.get('folders', default_folders())
         with LOCK:
             SESSIONS.pop(request.cookies.get('fea_session', ''), None)
             SESSIONS[token] = value
@@ -192,7 +202,7 @@ def scenario(body: Scenario, request: Request):
                 'pro_forma_operating_profit': str(Decimal(profit['amount']) - loss),
                 'inventory': inventory, 'profit': profit,
                 'formula': '공시 재고자산 장부금액 × 사용자 가정률 / 100',
-                'note': '재고자산 장부금액에 추가 손실이 발생하고 전액 영업비용에 반영된다고 가정한 산술 시나리오입니다. 기존 평가충당금·세금·회수가능성은 반영하지 않으며 회계처리 권고가 아닙니다.'}
+                'note': '입력한 손실률만큼 재고에서 추가 손실이 생겼을 때의 영업이익을 계산합니다.\n\n계산에서는 추가 손실 전액을 영업이익에서 차감합니다. 이미 반영된 평가손실과 세금 효과는 추가로 계산하지 않습니다.\n\n실제 손실금액은 재고 상태와 판매 가능금액을 확인해 별도로 판단해 주세요.'}
     except DomainError as error:
         raise HTTPException(400, str(error)) from None
 
@@ -228,15 +238,63 @@ def footing(request: Request):
     return {'rows':rows,'note':'서로 다른 연간 보고서에 표시된 같은 전기 금액을 비교합니다. 차이는 재작성·표시 변경·정정 여부를 확인할 대상으로 남깁니다. 주석 간 대사나 전체 재무제표 풋팅이 완료되었다는 뜻은 아닙니다.'}
 
 
+DEFAULT_FOLDERS = [
+    {'code':'C','name':'현금및현금성자산'}, {'code':'D','name':'금융자산'},
+    {'code':'E','name':'매출채권'}, {'code':'F','name':'재고자산'},
+    {'code':'VC','name':'판관비'}, {'code':'UB&VD&UC&VE','name':'기타손익'},
+    {'code':'COMMON','name':'공통 자료'},
+]
+
+
+def default_folders():
+    return [dict(f) for f in DEFAULT_FOLDERS]
+
+
+@app.post('/api/knowledge/session')
+def start_knowledge_session(request: Request, response: Response):
+    with LOCK:
+        prune()
+        token = request.cookies.get('fea_session','')
+        if token not in SESSIONS:
+            if len(SESSIONS) >= 8:
+                raise HTTPException(429, '작업 공간이 가득 찼습니다. 기존 세션을 종료하세요.')
+            token = secrets.token_urlsafe(32)
+            SESSIONS[token] = {'data':None, 'expires':time.monotonic()+TTL,
+                               'credentials':('',''), 'knowledge':[], 'folders':default_folders()}
+    response.set_cookie('fea_session',token,httponly=True,samesite='strict',max_age=TTL,secure=request.url.scheme=='https')
+    return {'knowledge_ready':True}
+
+
+class FolderRequest(BaseModel):
+    code: str = Field(min_length=1,max_length=30,pattern=r'^[A-Za-z0-9&_-]+$')
+    name: str = Field(min_length=1,max_length=60)
+
+
+@app.post('/api/knowledge/folders')
+def add_folder(body: FolderRequest, request: Request):
+    value = session(request,public=False)
+    folders = value.setdefault('folders',default_folders())
+    code = body.code.strip().upper()
+    if code=='ALL' or any(f['code']==code for f in folders):
+        raise HTTPException(400,'이미 사용 중이거나 예약된 계정 코드입니다.')
+    if len(folders)>=40:
+        raise HTTPException(400,'계정 폴더는 40개까지 만들 수 있습니다.')
+    folders.append({'code':code,'name':body.name.strip()})
+    return {'folders':folders}
+
+
 @app.post('/api/knowledge')
 async def upload_knowledge(request: Request, file: UploadFile = File(...), title: str = Form(''),
-                           version: str = Form(''), effective_date: str = Form('')):
-    value = session(request)
-    if len(value.setdefault('knowledge', [])) >= 6:
-        raise HTTPException(400, '세션당 문서는 6개까지 등록할 수 있습니다.')
+                           version: str = Form(''), effective_date: str = Form(''), account_code: str = Form('COMMON')):
+    value = session(request,public=False)
+    if account_code not in {f['code'] for f in value.get('folders',default_folders())}:
+        raise HTTPException(400,'계정 폴더를 선택하세요.')
+    if len(value.setdefault('knowledge', [])) >= 30:
+        raise HTTPException(400, '세션당 문서는 30개까지 등록할 수 있습니다.')
     try:
         raw = await file.read(1_000_001)
         doc = parse_document(file.filename or '', raw, title, version, effective_date)
+        doc['account_code'] = account_code
         if any(d['id'] == doc['id'] for d in value['knowledge']):
             raise DomainError('같은 내용의 문서가 이미 등록되어 있습니다.')
         value['knowledge'].append(doc)
@@ -249,21 +307,33 @@ async def upload_knowledge(request: Request, file: UploadFile = File(...), title
 
 @app.get('/api/knowledge')
 def list_knowledge(request: Request):
-    return {'documents': [public_metadata(d) for d in session(request).get('knowledge', [])]}
+    value = session(request,public=False)
+    return {'documents': [public_metadata(d) for d in value.get('knowledge', [])], 'folders':value.get('folders',default_folders())}
+
+
+class KnowledgeSearch(Ask):
+    account_code: str = Field(default='ALL',max_length=30)
 
 
 @app.post('/api/knowledge/search')
-def search_knowledge(body: Ask, request: Request):
-    value = session(request)
-    found = retrieve(value.get('knowledge', []), body.question)
+def search_knowledge(body: KnowledgeSearch, request: Request):
+    value = session(request,public=False)
+    documents = value.get('knowledge', [])
+    if not documents:
+        raise HTTPException(400, '등록된 문서가 없습니다. 파일을 먼저 등록한 뒤 검색하세요.')
+    if body.account_code != 'ALL':
+        documents = [d for d in documents if d.get('account_code','COMMON') == body.account_code]
+        if not documents:
+            raise HTTPException(400,'선택한 계정 폴더에 문서가 없습니다. 문서를 등록하거나 다른 계정을 선택하세요.')
+    found = retrieve(documents, body.question)
     return {'question': body.question, 'results': found, 'external_llm_transmission': False,
             'status': 'found' if found else 'insufficient_evidence',
-            'note': '사용자 문서의 발췌 검색 결과입니다. 사실관계에 대한 회계기준 적용 결론은 생성하지 않습니다. 적용일·버전은 사용자가 입력한 값이며 실제 유효성은 별도 확인하세요.'}
+            'note': '등록한 문서에서 찾은 관련 내용입니다. 문서에 없는 내용은 답변하지 않습니다. 적용일과 버전이 현재 업무에 맞는지 확인해 주세요.'}
 
 
 @app.delete('/api/knowledge/{document_id}')
 def remove_knowledge(document_id: str, request: Request):
-    value = session(request)
+    value = session(request,public=False)
     value['knowledge'] = [d for d in value.get('knowledge', []) if d['id'] != document_id]
     return {'removed': True}
 
