@@ -350,6 +350,28 @@ def experiments():
     return result
 
 
+class ValuationItem(BaseModel):
+    name: str = Field(default='품목', max_length=80)
+    quantity: str = Field(max_length=30)
+    cost: str = Field(max_length=30)
+    price: str = Field(max_length=30)
+    completion: str = Field(max_length=30)
+    selling: str = Field(max_length=30)
+
+
+class ValuationRequest(BaseModel):
+    items: list[ValuationItem] = Field(min_length=1, max_length=30)
+
+
+@app.post('/api/valuation')
+def inventory_valuation(body: ValuationRequest):
+    from .valuation import evaluate_inventory
+    try:
+        return evaluate_inventory([item.model_dump() for item in body.items])
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from None
+
+
 @app.get('/')
 def index():
     return FileResponse(ROOT / 'web' / 'index.html')
