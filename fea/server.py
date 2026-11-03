@@ -54,14 +54,26 @@ async def invalid_request(request, exc):
 async def local_boundary(request: Request, call_next):
     if request.method in ('POST', 'DELETE'):
         origin = request.headers.get('origin')
-        if origin and urlparse(origin).netloc != request.headers.get('host'):
+        expected_origin = str(request.base_url).rstrip('/')
+        if origin and origin != expected_origin:
             return JSONResponse({'detail': '같은 사이트에서 요청하세요.'}, status_code=403)
+        if request.headers.get('sec-fetch-site') == 'cross-site':
+            return JSONResponse({'detail': '같은 사이트에서 요청하세요.'}, status_code=403)
+        limit = 1_100_000 if request.url.path == '/api/knowledge' else 16000
         try:
             length = int(request.headers.get('content-length', '0'))
         except ValueError:
             return JSONResponse({'detail': '잘못된 요청입니다.'}, status_code=400)
-        if length > (1_100_000 if request.url.path == '/api/knowledge' else 16000):
+        if length < 0 or length > limit:
             return JSONResponse({'detail': '요청이 너무 큽니다.'}, status_code=413)
+        parts=[]
+        actual=0
+        async for chunk in request.stream():
+            actual += len(chunk)
+            if actual > limit:
+                return JSONResponse({'detail': '요청이 너무 큽니다.'}, status_code=413)
+            parts.append(chunk)
+        request._body=b''.join(parts)
     response = await call_next(request)
     response.headers['Cache-Control'] = 'no-store'
     response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -180,12 +192,19 @@ def disconnect(request: Request, response: Response):
 @app.post('/api/ask')
 def ask(body: Ask, request: Request):
     value = session(request)
+    with LOCK:
+        if value.get('analysis_running'):
+            raise HTTPException(429,'같은 작업 공간에서 분석이 진행 중입니다. 완료 후 다시 실행하세요.')
+        value['analysis_running']=True
     try:
         return answer(body.question, value['company'], value['year'], value['basis'],
                       source='dart', mode=body.mode, strategy=body.strategy,
                       data=value['data'], credentials=value['credentials'])
     except DomainError as error:
         raise HTTPException(400, str(error)) from None
+    finally:
+        with LOCK:
+            value['analysis_running']=False
 
 
 @app.post('/api/scenario')
