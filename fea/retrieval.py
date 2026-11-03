@@ -36,8 +36,10 @@ def structured_chunks(doc):
     context_positions=[x[0] for x in contexts]
     start=0
     while start<len(text):
-        end=min(len(text),start+1100)
-        if end<len(text):
+        next_heading=bisect.bisect_right(heading_positions,start)
+        section_end=heading_positions[next_heading] if next_heading<len(heading_positions) else len(text)
+        end=min(len(text),start+1100,section_end)
+        if end<len(text) and end!=section_end:
             boundary=text.rfind('\n',start+650,end)
             if boundary>start:end=boundary+1
         section_index=bisect.bisect_right(heading_positions,start)-1
@@ -52,7 +54,7 @@ def structured_chunks(doc):
                'basis_context':contexts[context_index][1] if context_index>=0 else 'unknown',
                '_numeric_share':sum(bool(re.fullmatch(r'[\d,().% −-]+',line)) for line in lines)/max(1,len(lines))}
         if end==len(text):break
-        start=max(start+1,end-150)
+        start=end if end==section_end else max(start+1,end-150)
 
 
 def query_terms(query):
@@ -85,6 +87,8 @@ def retrieve(documents, query, basis='CFS', k=3, *, structure=True, expansion=Tr
     candidates=[]
     n=len(corpus)
     for chunk,counts,length in zip(corpus,counters,lengths):
+        if chunk.get('basis_context') in ('CFS','OFS') and chunk['basis_context']!=basis:
+            continue
         score=0.0
         for term,weight in terms.items():
             tf=counts.get(term,0)
