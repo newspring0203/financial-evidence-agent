@@ -1,0 +1,35 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.env
+.env.*
+!.env.example
+data/raw/
+data/dart.json
+data/*.tmp
+.DS_Store
+
+# Local-only experiment reports, results and research notes (user preference)
+/experiments/
+/local_notes/
+/docs/experiment-report.md
+/docs/research/
+
+# Source-only deployment repository; development material remains local
+/tests/
+/data/
+/scripts/
+/docs/
+/.github/
+/fea/collect.py
+/fea/evaluate.py
+/fea/evaluate_llm.py
+/fea/evaluate_retrieval.py
+/pyproject.toml
+/requirements-dev.txt
+/start.command
+/.env.example
+
+# Keep the initial repository without a README
+/README.md
