@@ -372,6 +372,11 @@ def inventory_valuation(body: ValuationRequest):
         raise HTTPException(400, str(error)) from None
 
 
+@app.get('/health')
+def health():
+    return {'status':'ok'}
+
+
 @app.get('/')
 def index():
     return FileResponse(ROOT / 'web' / 'index.html')

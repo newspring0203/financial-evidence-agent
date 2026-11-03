@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: financial-evidence-agent
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    healthCheckPath: /health
+    autoDeploy: false

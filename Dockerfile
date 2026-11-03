@@ -5,6 +5,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY fea/ ./fea/
 COPY web/ ./web/
-RUN mkdir -p data
+RUN mkdir -p data && useradd --uid 10001 --create-home appuser && chown -R appuser:appuser /app
+USER appuser
 EXPOSE 8000
 CMD ["sh", "-c", "exec uvicorn fea.server:app --host 0.0.0.0 --port ${PORT:-8000} --no-access-log"]
