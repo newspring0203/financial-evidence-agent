@@ -1,0 +1,16 @@
+.git
+.venv
+.env
+.env.*
+__pycache__
+.pytest_cache
+data
+experiments
+local_notes
+tests
+scripts
+docs
+.github
+fea/collect.py
+fea/evaluate*.py
+*.pyc
