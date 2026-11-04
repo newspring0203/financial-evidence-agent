@@ -29,7 +29,7 @@ def structured_chunks(doc):
         line=m.group().strip()
         if len(line)<=90 and re.match(r'^(?:\d+(?:\.\d+)?[.．) ]|[IVXⅠⅡⅢⅣⅤ]+[.． ])',line) and len(re.findall('[가-힣A-Za-z]',line))>=3:
             headings.append((m.start(),line))
-        context=re.fullmatch(r'(?:\d+[.．]\s*)?(연결)?재무제표\s*주석',line)
+        context = re.fullmatch(r'(?:\d+[.．]\s*)?(연결\s*)?재무제표(?:\s*주석)?',line)
         if context:
             contexts.append((m.start(),'CFS' if context.group(1) else 'OFS'))
     heading_positions=[x[0] for x in headings]
