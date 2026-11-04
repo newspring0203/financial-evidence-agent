@@ -1,0 +1,56 @@
+{
+  "experiment": "exp08c_v4_evidence_first",
+  "questions": [
+    "R01",
+    "R02",
+    "R03",
+    "R04",
+    "R05",
+    "R06",
+    "R07",
+    "R08",
+    "R10",
+    "R12",
+    "R14",
+    "R15"
+  ],
+  "review_dir": "./experiments/ollama_runs/exp07c_dataset_20261104_101436_828977",
+  "audit_dir": "./experiments/ollama_runs/exp07c_dataset_20261104_101436_828977/scope_audit_20261104_104542_348662",
+  "snapshot": "./experiments/ollama_runs/exp07_cache/opendart_2024_CFS_73b47d6729b4.json.gz",
+  "config": {
+    "code_sha256": "6fb60df346d45c823d39ee1042bf168ee3c873e1aa5546694f177e1134bd9af5",
+    "selection_prompt_sha256": "e449495902bbe472aba37b17930d56cd19558f7f1d7993e3d9e6e3cfbd99eae0",
+    "answer_prompt_sha256": "ce7d91c4d82e3bde9e4e703897143f3462a689f2fd2cee738f2b8a9470b5984c",
+    "corpus_sha256": "31b51be6c360bcf633263ac09018c7507a7b962100f09b37ec36eb19a2f399a4",
+    "gold_sha256": "f4c94c81ab7bd7e2b779e4ed2f6bdbdd08ee8e8c6f64624d5eb8bb07c1dca3f6",
+    "embed_model": "qwen3-embedding:4b",
+    "generation_model": "qwen3:1.7b",
+    "temperature": 0,
+    "seed": 42,
+    "k": 3,
+    "conditions": [
+      "hybrid_allow_unknown",
+      "hybrid_explicit_cfs"
+    ],
+    "selector_num_predict": 256,
+    "answer_num_predict": 350,
+    "evidence_window": 420,
+    "evidence_step": 280,
+    "max_per_passage": 3,
+    "max_selected": 1,
+    "selection_policy": "single_primary_support_v3",
+    "generation_policy": "plain_text_answer_only_v4"
+  },
+  "holdout_only": true,
+  "pilot_dir": "experiments/ollama_runs/exp07c_dataset_20261104_101436_828977/experiment08c_v4_20261104_123949_926229",
+  "elapsed_s": 698.738,
+  "caveats": [
+    "Model's selected quote matching and source hash check cannot establish semantic support.",
+    "A quote that is correct textually can be irrelevant to the answer; human review required.",
+    "Single-primary selection avoids extra citations but may hurt multi-evidence questions; measure this in holdout.",
+    "Plain-text generation avoids JSON syntax failures but does not guarantee truthfulness or completeness.",
+    "Only explicit CFS source windows are offered to selector; others are reported but not used.",
+    "This v4 changes generation output format after observing R09/R16 v3 failures; the other 12 questions have not been used for v4 adjustment.",
+    "Some questions in original Gold may be ambiguous; no Gold labels were changed."
+  ]
+}

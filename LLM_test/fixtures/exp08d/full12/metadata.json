@@ -1,0 +1,13 @@
+{
+  "experiment": "exp08d_selector_full12",
+  "baseline": "experiments/ollama_runs/exp07c_dataset_20261104_101436_828977/experiment08c_v4_20261104_124425_478191",
+  "baseline_attempts_sha256": "7789297be7542d1b83eeb6f1da5388e90f6e5b188ba9a4d925ec12d7146d44b5",
+  "baseline_candidates_sha256": "94e420bb40638606e92f250627eb90897985d5f63f868b79e52249a5572cde8e",
+  "baseline_evidence_sha256": "dacf1fe40ea859a36b1e605d1629609a1b63e9b8f41aa2e9953f8417d8183daa",
+  "model": "qwen3:1.7b",
+  "temperature": 0,
+  "seed": 42,
+  "num_predict": 256,
+  "selector_prompt_sha256": "0f17847b070db2504392d096a96e8340afcc6e55fbbcc4fe2e8cc7ed61c9b5b4",
+  "note": "Previously used evaluation data. Regression test only. Gold chunk selection is not answer correctness."
+}

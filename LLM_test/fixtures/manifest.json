@@ -1,0 +1,68 @@
+{
+  "purpose": "Frozen public-disclosure inputs for selector regression; previous evaluation data, not an independent holdout. Full retrieval corpus and embedding caches remain local.",
+  "files": [
+    {
+      "file": "retrieval/question_bank.json",
+      "source": "experiments/ollama_runs/exp07c_dataset_20261104_101436_828977/question_bank.json",
+      "source_sha256": "8251959183c049203ad327ceeb452ce5ae236905e69476a455f356c9ecff3662",
+      "sha256": "8251959183c049203ad327ceeb452ce5ae236905e69476a455f356c9ecff3662",
+      "normalization": "none"
+    },
+    {
+      "file": "retrieval/gold_review.csv",
+      "source": "experiments/ollama_runs/exp07c_dataset_20261104_101436_828977/gold_review.csv",
+      "source_sha256": "f4c94c81ab7bd7e2b779e4ed2f6bdbdd08ee8e8c6f64624d5eb8bb07c1dca3f6",
+      "sha256": "f4c94c81ab7bd7e2b779e4ed2f6bdbdd08ee8e8c6f64624d5eb8bb07c1dca3f6",
+      "normalization": "none"
+    },
+    {
+      "file": "retrieval/dataset_metadata.json",
+      "source": "experiments/ollama_runs/exp07c_dataset_20261104_101436_828977/dataset_metadata.json",
+      "source_sha256": "00877f22466cd7c599d5e7051527f939ffecc407e73ce08d88f7c5f2892280d9",
+      "sha256": "00877f22466cd7c599d5e7051527f939ffecc407e73ce08d88f7c5f2892280d9",
+      "normalization": "none"
+    },
+    {
+      "file": "exp08d/baseline/attempts.jsonl",
+      "source": "experiments/ollama_runs/exp07c_dataset_20261104_101436_828977/experiment08c_v4_20261104_124425_478191/attempts.jsonl",
+      "source_sha256": "7789297be7542d1b83eeb6f1da5388e90f6e5b188ba9a4d925ec12d7146d44b5",
+      "sha256": "7789297be7542d1b83eeb6f1da5388e90f6e5b188ba9a4d925ec12d7146d44b5",
+      "normalization": "none"
+    },
+    {
+      "file": "exp08d/baseline/selector_candidates.csv",
+      "source": "experiments/ollama_runs/exp07c_dataset_20261104_101436_828977/experiment08c_v4_20261104_124425_478191/selector_candidates.csv",
+      "source_sha256": "94e420bb40638606e92f250627eb90897985d5f63f868b79e52249a5572cde8e",
+      "sha256": "94e420bb40638606e92f250627eb90897985d5f63f868b79e52249a5572cde8e",
+      "normalization": "none"
+    },
+    {
+      "file": "exp08d/baseline/retrieved_evidence.csv",
+      "source": "experiments/ollama_runs/exp07c_dataset_20261104_101436_828977/experiment08c_v4_20261104_124425_478191/retrieved_evidence.csv",
+      "source_sha256": "dacf1fe40ea859a36b1e605d1629609a1b63e9b8f41aa2e9953f8417d8183daa",
+      "sha256": "dacf1fe40ea859a36b1e605d1629609a1b63e9b8f41aa2e9953f8417d8183daa",
+      "normalization": "none"
+    },
+    {
+      "file": "exp08d/baseline/metadata.json",
+      "source": "experiments/ollama_runs/exp07c_dataset_20261104_101436_828977/experiment08c_v4_20261104_124425_478191/metadata.json",
+      "source_sha256": "e7efeb83a9fc79e16531fa01f6fcda1c0efe546c488d67b7aa31cc6a63975eda",
+      "sha256": "72fd1a2033c83fa6ca1d3037b17d7eb6fa7cdfe1334614d013215aae830f9702",
+      "normalization": "Project absolute path replaced with ."
+    },
+    {
+      "file": "exp08d/full12/results.jsonl",
+      "source": "experiments/ollama_runs/exp07c_dataset_20261104_101436_828977/experiment08d_full12_20261104_151549_568341/results.jsonl",
+      "source_sha256": "31c91a2019f7f64747b9261df642de0b998cd5ab91ce09bfb008a5a4ce3fec30",
+      "sha256": "31c91a2019f7f64747b9261df642de0b998cd5ab91ce09bfb008a5a4ce3fec30",
+      "normalization": "none"
+    },
+    {
+      "file": "exp08d/full12/metadata.json",
+      "source": "experiments/ollama_runs/exp07c_dataset_20261104_101436_828977/experiment08d_full12_20261104_151549_568341/metadata.json",
+      "source_sha256": "0ec51722c07d0fadb2807dc3b8b84fe32e935afb796ef0f1d5dee64b7b82468b",
+      "sha256": "0ec51722c07d0fadb2807dc3b8b84fe32e935afb796ef0f1d5dee64b7b82468b",
+      "normalization": "none"
+    }
+  ]
+}

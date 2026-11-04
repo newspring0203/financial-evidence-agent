@@ -1,0 +1,12 @@
+{
+  "source": "OpenDART original public report snapshot",
+  "snapshot": "experiments/ollama_runs/exp07_cache/opendart_2024_CFS_73b47d6729b4.json.gz",
+  "company": "삼성전자",
+  "year": 2024,
+  "basis": "CFS",
+  "corpus_chunks": 701,
+  "corpus_sha256": "7a76a2dcf49781345d985a16655192f737abad50e10a62ce68c0b8b571fddbf1",
+  "questions": 16,
+  "candidates": 70,
+  "label_policy": "Unverified until manual_verified=1 after source, question, scope and accounting-value checks"
+}
