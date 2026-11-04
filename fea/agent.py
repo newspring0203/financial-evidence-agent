@@ -262,6 +262,9 @@ def answer(question, company, year, basis='CFS', source='dart', mode='rules', st
         raise DomainError('질문은 1~1000자여야 합니다.')
     if mode == 'rules':
         final, usage = rule_run(run, question), None
+    elif mode == 'local':
+        from .local_llm import answer_local
+        final, usage = answer_local(run, question, client), None
     elif mode == 'llm':
         final, usage = llm_run(run, question, client, credentials)
     else:

@@ -111,7 +111,7 @@ class Connect(BaseModel):
 
 class Ask(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
-    mode: str = Field(default='rules', pattern='^(rules|llm)$')
+    mode: str = Field(default='rules', pattern='^(rules|llm|local)$')
     strategy: str = Field(default='bm25', pattern='^(keyword|expanded|bm25)$')
 
 
@@ -138,6 +138,12 @@ def metadata(value):
             'documents': [{k: v for k, v in d.items() if k != 'text'} for d in data['documents']],
             'llm_ready': bool(value['credentials'][0] and value['credentials'][1]),
             'model': value['credentials'][1], 'expires_in_seconds': max(0, int(value['expires'] - time.monotonic()))}
+
+
+@app.get('/api/capabilities')
+def capabilities():
+    from .local_llm import availability
+    return {'local_llm':availability()}
 
 
 @app.get('/api/status')
