@@ -17,17 +17,19 @@ data/*.tmp
 /docs/research/
 
 # Source-only deployment repository; development material remains local
-/tests/
 /data/
 /scripts/
 /docs/
-/.github/
 /fea/collect.py
 /fea/evaluate.py
 /fea/evaluate_llm.py
 /fea/evaluate_retrieval.py
-/pyproject.toml
-/requirements-dev.txt
 /start.command
 /.env.example
 
+
+# Publish only the synthetic fixture required by automated tests
+!/data/
+/data/*
+!/data/demo.json
+/LLM_test/fixtures/exp08d/experiment*/
