@@ -58,7 +58,13 @@ def structured_chunks(doc):
 
 
 def query_terms(query):
-    inventory_policy=('재고' in query and any(w in query for w in ('정책','평가','저가법','측정','순실현')))
+    policy_signals = (
+    '평가정책', '평가방법',
+    '저가법', '측정', '순실현')
+
+    inventory_policy = (
+    '재고' in query
+    and any(w in query for w in policy_signals))
     if inventory_policy:
         # Query decomposition: financial comparisons are handled by numeric tools.
         query='재고자산 평가정책 원가 순실현가능가치 저가법'+(' 평가손실' if '손실' in query else '')
