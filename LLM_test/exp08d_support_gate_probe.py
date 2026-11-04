@@ -17,6 +17,9 @@ FULL12 = BASE.parent / (
     "experiment08d_full12_20261104_151549_568341"
 )
 
+if not FULL12.is_dir():
+    FULL12 = Path(__file__).resolve().parent / "fixtures/exp08d/full12"
+
 # Labels based on manual review of the actual selected excerpts.
 EXPECTED = {
     "R04": "unsupported",

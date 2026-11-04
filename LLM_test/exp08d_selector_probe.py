@@ -16,6 +16,10 @@ BASE = Path(
     "exp07c_dataset_20261104_101436_828977/"
     "experiment08c_v4_20261104_124425_478191"
 )
+# Public frozen inputs are used when the original local run is unavailable.
+if not BASE.is_dir():
+    BASE = Path(__file__).resolve().parent / "fixtures/exp08d/baseline"
+
 ERRORS = {
     "selector_invalid_candidate_id",
     "selector_abstention_with_selection",
