@@ -33,3 +33,15 @@ data/*.tmp
 /data/*
 !/data/demo.json
 /LLM_test/fixtures/exp08d/experiment*/
+
+# Local experiment environments
+.venv-*/
+
+# E09 source only: keep questions (including sealed holdout), Gold and runs local
+/E09_package/*
+!/E09_package/*.py
+/E09_package/generate_questions.py
+!/E09_package/README.md
+!/E09_package/tests/
+/E09_package/tests/*
+!/E09_package/tests/test_*.py
